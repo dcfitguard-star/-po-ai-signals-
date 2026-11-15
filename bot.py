@@ -1,3 +1,4 @@
+"""
 PO AI Signals - Telegram market-analysis bot.
 Signals only: BUY / SELL / WAIT. It does NOT place trades.
 Data source: Twelve Data (external candles; not Pocket Option OTC quotes).
@@ -246,11 +247,11 @@ def analyze(symbol: str, timeframe_label: str) -> dict:
 
     score = sum(votes)
     if score >= 4:
-        signal = "BUY ð¢"
+        signal = "BUY 🟢"
     elif score <= -4:
-        signal = "SELL ð´"
+        signal = "SELL 🔴"
     else:
-        signal = "WAIT ð¡"
+        signal = "WAIT 🟡"
 
     agreement = round(abs(score) / len(votes) * 100)
     return {
@@ -290,21 +291,21 @@ def apply_confirmation(result: dict, five_minute: Optional[dict],
                  and original in ("BUY", "SELL"))
 
     if original in ("BUY", "SELL") and not confirmed:
-        checked["signal"] = "WAIT ð¡"
+        checked["signal"] = "WAIT 🟡"
         checked["confirmation"] = (
-            f"BLOCKED â 5m {five_direction}, 15m {fifteen_direction}"
+            f"BLOCKED — 5m {five_direction}, 15m {fifteen_direction}"
         )
     elif original in ("BUY", "SELL"):
-        checked["confirmation"] = f"CONFIRMED â 5m {five_direction}, 15m {fifteen_direction}"
+        checked["confirmation"] = f"CONFIRMED — 5m {five_direction}, 15m {fifteen_direction}"
     else:
-        checked["confirmation"] = f"Not triggered â 5m {five_direction}, 15m {fifteen_direction}"
+        checked["confirmation"] = f"Not triggered — 5m {five_direction}, 15m {fifteen_direction}"
     return checked
 
 
 def analyze_with_confirmation(symbol: str, timeframe_label: str) -> dict:
     result = analyze(symbol, timeframe_label)
     if _direction(result) not in ("BUY", "SELL"):
-        result["confirmation"] = "Not triggered â primary signal is WAIT"
+        result["confirmation"] = "Not triggered — primary signal is WAIT"
         return result
 
     confirmations = {}
@@ -329,8 +330,8 @@ def format_signal(result: dict) -> str:
         f"*5m/15m confirmation:* {result.get('confirmation', 'Not checked')}\n"
     )
     return (
-        f"ð *PO AI SIGNALS â {result['symbol']}*\n"
-        f"ââââââââââââââââââ\n"
+        f"📊 *PO AI SIGNALS — {result['symbol']}*\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
         f"*Signal:* {result['signal']}\n"
         f"*Chart timeframe:* {result['timeframe']}\n"
         f"*Rule agreement:* {result['agreement']}% "
@@ -339,12 +340,12 @@ def format_signal(result: dict) -> str:
         + f"*Last completed candle:* {result['candle_time']}\n"
         f"*Close:* `{result['price']:.6g}`\n\n"
         f"*Indicator readings*\n"
-        f"â¢ RSI(14): `{result['rsi']:.1f}`\n"
-        f"â¢ EMA 9 / 21 / 50: `{result['ema9']:.6g}` / "
+        f"• RSI(14): `{result['rsi']:.1f}`\n"
+        f"• EMA 9 / 21 / 50: `{result['ema9']:.6g}` / "
         f"`{result['ema21']:.6g}` / `{result['ema50']:.6g}`\n"
-        f"â¢ MACD histogram: `{result['macd_hist']:.6g}`\n"
-        f"â¢ Bollinger middle: `{result['bb_mid']:.6g}`\n\n"
-        f"â ï¸ *Analysis only, not a guaranteed trade.* Rule agreement is not "
+        f"• MACD histogram: `{result['macd_hist']:.6g}`\n"
+        f"• Bollinger middle: `{result['bb_mid']:.6g}`\n\n"
+        f"⚠️ *Analysis only, not a guaranteed trade.* Rule agreement is not "
         f"a win probability. Verify the price/feed and candle on Pocket Option; "
         f"OTC quotes can differ from this external data source. No trade is placed."
     )
@@ -356,10 +357,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Welcome to PO AI Signals.\n\n"
         "Commands:\n"
-        "/signal EUR/USD 5m â analyze one timeframe\n"
-        "/scan EUR/USD â analyze all supported timeframes\n"
-        "/timeframes â show supported intervals\n"
-        "/help â show help\n\n"
+        "/signal EUR/USD 5m — analyze one timeframe\n"
+        "/scan EUR/USD — analyze all supported timeframes\n"
+        "/timeframes — show supported intervals\n"
+        "/help — show help\n\n"
         "Signals are BUY, SELL, or WAIT. This bot never places trades."
     )
 
@@ -402,7 +403,7 @@ async def signal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if tf not in TIMEFRAMES:
             raise ValueError("Unsupported timeframe. Use /timeframes.")
 
-        await update.message.reply_text(f"Analyzing {symbol} on {tf}â¦")
+        await update.message.reply_text(f"Analyzing {symbol} on {tf}…")
         result = await asyncio.to_thread(analyze_with_confirmation, symbol, tf)
         await update.message.reply_text(format_signal(result), parse_mode="Markdown")
     except Exception as exc:
@@ -459,17 +460,17 @@ async def scan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     five_direction = _direction(five_minute)
     fifteen_direction = _direction(fifteen_minute)
     if five_direction == "UNAVAILABLE" or fifteen_direction == "UNAVAILABLE":
-        confirmation_summary = "5m/15m confirmation unavailable â BUY/SELL signals suppressed."
+        confirmation_summary = "5m/15m confirmation unavailable — BUY/SELL signals suppressed."
     elif five_direction == fifteen_direction and five_direction in ("BUY", "SELL"):
-        confirmation_summary = f"5m + 15m confirmation: {five_direction} â matching direction."
+        confirmation_summary = f"5m + 15m confirmation: {five_direction} — matching direction."
     else:
         confirmation_summary = (
-            f"5m/15m confirmation: NOT MET (5m {five_direction}, 15m {fifteen_direction}) â "
+            f"5m/15m confirmation: NOT MET (5m {five_direction}, 15m {fifteen_direction}) — "
             "BUY/SELL signals suppressed."
         )
 
     message = (
-        f"ð¡ *MULTI-TIMEFRAME SCAN â {symbol}*\n"
+        f"📡 *MULTI-TIMEFRAME SCAN — {symbol}*\n"
         "```\n" + "\n".join(results) + "\n```\n"
         f"*Confirmation rule:* {confirmation_summary}\n"
         "Rule agreement is not a win probability. External prices may differ "
