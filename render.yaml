@@ -1,0 +1,13 @@
+services:
+  - type: worker
+    name: po-ai-signals
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false
+      - key: DISPLAY_TIMEZONE
+        value: America/Los_Angeles
